@@ -95,7 +95,7 @@ model Teacher {
     photo     String?
     full_name String
     attendace Attendance[]
-    // GroupTeacher GroupTeacher[]
+    GroupTeacher GroupTeacher[]
     homework  Homework[]
     homeworkResults HomeworkResult[]
     lessons   Lesson[]
@@ -139,13 +139,13 @@ model Group {
     updatedAt     DateTime       @default(now())
     courses       Course         @relation(fields: [course_id], references: [id])
     rooms         Room           @relation(fields: [room_id], references: [id])
-    // GroupTeachers GroupTeacher[]
+    GroupTeachers GroupTeacher[]
     homeworks     Homework[]
     lessons       Lesson[]
     studentGroups StudentGroup[]
     attendance    Attendance[]
     homeworkResults HomeworkResult[]
-    // lessonVideos LessonVideo[]
+    lessonVideos LessonVideo[]
 }
 
 model StudentGroup {
@@ -175,7 +175,7 @@ model Lesson {
     groups      Group      @relation(fields: [group_id], references: [id])
     teachers    Teacher?   @relation(fields: [teacher_id], references: [id])
     users       User?      @relation(fields: [user_id], references: [id])
-    // lessonVideos LessonVideo[]
+    lessonVideos LessonVideo[]
 }
 
 model Attendance {
@@ -242,4 +242,32 @@ model HomeworkResult {
     user               User?    @relation(fields: [user_id], references: [id])
     groups             Group    @relation(fields: [group_id], references: [id])
     homework           Homework @relation(fields: [homework_id], references: [id])
+
+    @@unique([homework_answer_id,teacher_id,user_id,group_id])
+}
+
+model GroupTeacher{
+    id Int @id @default(autoincrement())
+    group_id Int
+    teacher_id Int
+    status TeacherGroupStatus @default(active)
+    createdAt          DateTime       @default(now())
+    updatedAt          DateTime       @default(now())
+    group Group @relation(fields: [group_id],references: [id])
+    teacher Teacher @relation(fields: [teacher_id],references: [id])
+
+    @@unique([group_id,teacher_id])
+}
+
+model LessonVideo{
+    id Int @id @default(autoincrement())
+    lesson_id Int
+    group_id Int
+    originalName String
+    videoUrl String
+    size_mb String
+    createdAt          DateTime       @default(now())
+    updatedAt          DateTime       @default(now())
+    lesson Lesson @relation(fields: [lesson_id],references: [id])
+    group Group @relation(fields: [group_id],references: [id])
 }

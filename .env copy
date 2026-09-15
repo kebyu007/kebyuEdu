@@ -1,0 +1,9 @@
+PRISMA_URL="postgresql://kebyu:7007@localhost:5432/kebyu-erp?schema=public"
+DATABASE_URL="postgresql://kebyu:7007@localhost:5432/kebyu-erp?schema=public"
+REDIS_URL="redis://localhost:6379"
+JWT_SECRET="super-secret-erp-key"
+JWT_REFRESH_SECRET="super-refresh-erp-key"
+PORT=3000
+
+# Seeder format: ROLE=FirstName:LastName:Phone:Email:Password
+SEED_USERS="SUPERADMIN=Kebyu:Edu:+998933921177:kebyu001@gmail.com:123456,ADMIN=Javohir:Developer:+998900000001:joha@gmail.com:123456"

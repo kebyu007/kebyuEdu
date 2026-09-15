@@ -54,6 +54,7 @@ model User {
     birth_date      DateTime?
     attributes      Json?
     photo           String?
+    telegram_chat_id String?         @unique
     createdAt       DateTime         @default(now())
     updatedAt       DateTime         @default(now())
 
@@ -77,6 +78,7 @@ model Course {
     duration_hours Int
     duration_month Int
     status         Status   @default(active)
+    photo          String?
     groups         Group[]
 }
 
@@ -99,7 +101,7 @@ model Group {
     start_date      DateTime
     start_time      String
     max_student     Int
-    weekday         String
+    weekday         Int[]
     status          GroupStatus      @default(active)
     createdAt       DateTime         @default(now())
     updatedAt       DateTime         @default(now())

@@ -33,4 +33,13 @@ export class FilterGroupDto {
   @IsNumber()
   @Min(1)
   limit?: number = 10;
+
+  @ApiPropertyOptional({
+    description:
+      "O'qituvchi ID si (faqat o'qituvchining o'z guruhlarini ko'rsatish uchun)",
+  })
+  @IsOptional()
+  @Transform(({ value }) => parseInt(value, 10))
+  @IsNumber()
+  teacher_id?: number;
 }

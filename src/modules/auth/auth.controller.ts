@@ -1,4 +1,16 @@
-import { Controller, Post, UseGuards, Request, Body } from '@nestjs/common';
+import {
+  Controller,
+  Post,
+  Get,
+  Patch,
+  UseGuards,
+  Request,
+  Body,
+  UseInterceptors,
+  UploadedFile,
+} from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { getMulterOptions } from '@/common/utils/file-upload.util';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { AuthService } from './auth.service';
 import { AuthGuard } from '@nestjs/passport';
@@ -37,6 +49,29 @@ export class AuthController {
   @Post('logout')
   async logout(@Request() req) {
     return this.authService.logout(req.user.id);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: "Joriy foydalanuvchi ma'lumotlarini olish" })
+  @Get('me')
+  async getMe(@Request() req) {
+    return this.authService.getMe(req.user.id);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: "Profil ma'lumotlarini tahrirlash" })
+  @UseInterceptors(
+    FileInterceptor('photo', getMulterOptions('profile_pictures')),
+  )
+  @Patch('profile')
+  async updateProfile(
+    @Request() req,
+    @Body() body: any,
+    @UploadedFile() file: Express.Multer.File,
+  ) {
+    return this.authService.updateProfile(req.user.id, body, file);
   }
 
   @Public()

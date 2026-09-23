@@ -4,7 +4,7 @@ import { extname } from 'path';
 
 export const getMulterOptions = (
   destination: string,
-  type: 'image' | 'document' = 'image',
+  type: 'image' | 'document' | 'video' = 'image',
 ) => {
   return {
     storage: diskStorage({
@@ -15,7 +15,7 @@ export const getMulterOptions = (
       },
     }),
     limits: {
-      fileSize: 10 * 1024 * 1024, // 10MB limit (can be customized later)
+      fileSize: type === 'video' ? 2 * 1024 * 1024 * 1024 : 10 * 1024 * 1024, // Videos up to 2GB, others 10MB
     },
     fileFilter: (req: any, file: Express.Multer.File, cb: any) => {
       let allowedMimes = ['image/jpeg', 'image/png', 'image/jpg'];
@@ -30,15 +30,24 @@ export const getMulterOptions = (
           'application/x-zip-compressed',
           'application/x-rar-compressed',
         ];
+      } else if (type === 'video') {
+        allowedMimes = [
+          'video/mp4',
+          'video/x-matroska', // mkv
+          'video/x-msvideo', // avi
+          'video/quicktime', // mov
+        ];
       }
 
       if (allowedMimes.includes(file.mimetype)) {
         cb(null, true);
       } else {
-        const msg =
-          type === 'document'
-            ? 'Faqat rasm yoki hujjat (pdf, doc, zip, rar) yuklash mumkin!'
-            : 'Faqat rasm (jpg, jpeg, png) yuklash mumkin!';
+        let msg = 'Faqat rasm (jpg, jpeg, png) yuklash mumkin!';
+        if (type === 'document')
+          msg = 'Faqat rasm yoki hujjat (pdf, doc, zip, rar) yuklash mumkin!';
+        if (type === 'video')
+          msg = 'Faqat video (mp4, mkv, avi, mov) yuklash mumkin!';
+
         cb(new BadRequestException(msg), false);
       }
     },

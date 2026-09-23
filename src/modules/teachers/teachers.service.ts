@@ -17,12 +17,14 @@ export class TeachersService {
   constructor(private prisma: PrismaService) {}
 
   async create(createTeacherDto: CreateTeacherDto, file?: Express.Multer.File) {
+    const orConditions: any[] = [{ phone: createTeacherDto.phone }];
+    if (createTeacherDto.email && createTeacherDto.email.trim() !== '') {
+      orConditions.push({ email: createTeacherDto.email.trim() });
+    }
+
     const existingUser = await this.prisma.user.findFirst({
       where: {
-        OR: [
-          { phone: createTeacherDto.phone },
-          { email: createTeacherDto.email },
-        ],
+        OR: orConditions,
       },
     });
 
@@ -34,16 +36,20 @@ export class TeachersService {
     }
 
     try {
-      const hashedPassword = await argon2.hash(createTeacherDto.password);
+      const rawPassword = createTeacherDto.password || '123456';
+      const hashedPassword = await argon2.hash(rawPassword);
 
       const teacher = await this.prisma.user.create({
         data: {
           first_name: createTeacherDto.first_name,
           last_name: createTeacherDto.last_name,
           phone: createTeacherDto.phone,
-          email: createTeacherDto.email,
+          email:
+            createTeacherDto.email && createTeacherDto.email.trim() !== ''
+              ? createTeacherDto.email.trim()
+              : null,
           password: hashedPassword,
-          address: createTeacherDto.address,
+          address: createTeacherDto.address || null,
           birth_date: createTeacherDto.birth_date,
           role: UserRoles.TEACHER,
           photo: file ? file.path : null,
@@ -59,7 +65,11 @@ export class TeachersService {
   }
 
   async findAll(filterDto: FilterTeacherDto) {
-    const { status, search } = filterDto;
+    const { status, search, page = 1, limit = 10 } = filterDto;
+
+    const pageNum = Number(page) || 1;
+    const limitNum = Number(limit) || 10;
+    const skip = (pageNum - 1) * limitNum;
 
     const where: Prisma.UserWhereInput = {
       role: UserRoles.TEACHER,
@@ -74,22 +84,39 @@ export class TeachersService {
         { first_name: { contains: search, mode: 'insensitive' } },
         { last_name: { contains: search, mode: 'insensitive' } },
         { phone: { contains: search, mode: 'insensitive' } },
+        { email: { contains: search, mode: 'insensitive' } },
       ];
     }
 
-    const teachers = await this.prisma.user.findMany({
-      where,
-      include: {
-        teacherGroups: {
-          include: { group: true },
+    const [total, teachers] = await this.prisma.$transaction([
+      this.prisma.user.count({ where }),
+      this.prisma.user.findMany({
+        where,
+        skip,
+        take: limitNum,
+        orderBy: { createdAt: 'desc' },
+        include: {
+          teacherGroups: {
+            include: { group: true },
+          },
         },
-      },
-    });
+      }),
+    ]);
 
-    return teachers.map((t) => {
+    const formattedTeachers = teachers.map((t) => {
       const { password, ...result } = t;
       return result;
     });
+
+    return {
+      data: formattedTeachers,
+      meta: {
+        total,
+        page: pageNum,
+        limit: limitNum,
+        totalPages: Math.ceil(total / limitNum) || 1,
+      },
+    };
   }
 
   async findOne(id: number) {

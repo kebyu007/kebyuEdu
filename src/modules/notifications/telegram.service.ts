@@ -58,25 +58,30 @@ export class TelegramService implements OnModuleInit {
         data: { telegram_chat_id: chatId },
       });
 
-      // Token generatsiya qilish
-      const token = uuidv4();
-      await this.cacheManager.set(`reset_token:${token}`, user.id, 300000); // 5 minut
-
-      const frontUrl =
-        this.configService.get<string>('FRONTEND_URL') ||
-        'http://localhost:3000';
-      const resetLink = `${frontUrl}/reset-password?token=${token}`;
+      // Token generatsiya qilish (6 xonali OTP)
+      const otp = Math.floor(100000 + Math.random() * 900000).toString();
+      await this.cacheManager.set(`reset_token:${otp}`, user.id, 300000); // 5 minut
 
       await ctx.reply(
-        `Sizning parolni tiklash havolangiz:\n${resetLink}\n\nBu havola atigi 5 daqiqa amal qiladi!`,
+        `Sizning parolni tiklash kodingiz: ${otp}\n\nUshbu kodni saytdagi "Tasdiqlash kodi" maydoniga kiriting.\nKod atigi 5 daqiqa amal qiladi!`,
         Markup.removeKeyboard(),
       );
+    });
+
+    // Telegraf ichki xatolarini ushlash
+    this.bot.catch((err, ctx) => {
+      this.logger.error(`Telegram xatosi (${ctx?.updateType}):`, err);
     });
 
     this.bot
       .launch()
       .then(() => this.logger.log('Telegram bot muvaffaqiyatli ishga tushdi'))
-      .catch((e) => this.logger.error('Botni ishga tushirishda xato:', e));
+      .catch((e) => {
+        this.logger.error(
+          'Botni ishga tushirishda xato (Tarmoq yoki API xatosi):',
+          e.message || e,
+        );
+      });
 
     // Tizim yopilayotganda botni to'xtatish
     process.once('SIGINT', () => this.bot.stop('SIGINT'));

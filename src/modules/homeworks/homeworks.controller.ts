@@ -8,6 +8,7 @@ import {
   UseInterceptors,
   UploadedFile,
   Req,
+  Get,
 } from '@nestjs/common';
 import { HomeworksService } from './homeworks.service';
 import { CreateHomeworkDto } from './dto/create-homework.dto';
@@ -43,9 +44,8 @@ export class HomeworksController {
     @UploadedFile() file: Express.Multer.File,
     @Req() req: any,
   ) {
-    const teacherId = req.user.id;
     return this.homeworksService.createHomework(
-      teacherId,
+      req.user,
       createHomeworkDto,
       file,
     );
@@ -77,5 +77,12 @@ export class HomeworksController {
   ) {
     const teacherId = req.user.id;
     return this.homeworksService.gradeAnswer(+id, teacherId, gradeDto);
+  }
+
+  @Get(':id/results')
+  @ApiOperation({ summary: 'Uy vazifasi natijalari' })
+  @RequirePermissions('homeworks', 'read')
+  getHomeworkResults(@Param('id') id: string) {
+    return this.homeworksService.getHomeworkResults(+id);
   }
 }

@@ -45,6 +45,15 @@ export class LessonsController {
     return this.lessonsService.findAll(+groupId);
   }
 
+  @Get('by-date')
+  @ApiOperation({ summary: "Guruhning ma'lum kundagi darsini ko'rish" })
+  @ApiQuery({ name: 'groupId', type: Number })
+  @ApiQuery({ name: 'date', type: String })
+  @RequirePermissions('lessons', 'read')
+  findByDate(@Query('groupId') groupId: string, @Query('date') date: string) {
+    return this.lessonsService.findByDate(+groupId, date);
+  }
+
   @Get(':id')
   @ApiOperation({ summary: "Dars haqida ma'lumot (davomat bilan)" })
   @RequirePermissions('lessons', 'read')
@@ -55,8 +64,12 @@ export class LessonsController {
   @Patch(':id')
   @ApiOperation({ summary: "Dars ma'lumotini tahrirlash" })
   @RequirePermissions('lessons', 'update')
-  update(@Param('id') id: string, @Body() updateLessonDto: UpdateLessonDto) {
-    return this.lessonsService.update(+id, updateLessonDto);
+  update(
+    @Param('id') id: string,
+    @Body() updateLessonDto: UpdateLessonDto,
+    @Req() req: any,
+  ) {
+    return this.lessonsService.update(+id, updateLessonDto, req.user);
   }
 
   @Delete(':id')
@@ -74,7 +87,6 @@ export class LessonsController {
     @Body() dto: SubmitAttendanceDto,
     @Req() req: any,
   ) {
-    const teacherId = req.user.id;
-    return this.lessonsService.submitAttendance(+id, dto, teacherId);
+    return this.lessonsService.submitAttendance(+id, dto, req.user);
   }
 }

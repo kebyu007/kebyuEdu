@@ -10,6 +10,7 @@ import {
   UploadedFile,
   UseGuards,
   Query,
+  Request,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { ApiTags, ApiOperation, ApiConsumes } from '@nestjs/swagger';
@@ -39,6 +40,59 @@ export class StudentsController {
     @UploadedFile() file: Express.Multer.File,
   ) {
     return this.studentsService.create(createStudentDto, file);
+  }
+
+  @Get('me/dashboard')
+  @ApiOperation({
+    summary:
+      "O'quvchining shaxsiy paneli ma'lumotlarini olish (Dars jadvali va guruhlar)",
+  })
+  getMyDashboard(@Request() req) {
+    return this.studentsService.getMyDashboard(req.user.id);
+  }
+
+  @Get('me/groups')
+  @ApiOperation({
+    summary: "O'quvchining barcha guruhlarini olish (faol va tugagan)",
+  })
+  getMyGroups(@Request() req) {
+    return this.studentsService.getMyGroups(req.user.id);
+  }
+
+  @Get('me/groups/:id/lessons')
+  @ApiOperation({ summary: "Guruhning darslari va uy vazifalarini olish" })
+  getGroupLessons(@Request() req, @Param('id') groupId: string) {
+    return this.studentsService.getGroupLessons(req.user.id, +groupId);
+  }
+
+  @Get('me/lessons/:id')
+  @ApiOperation({ summary: "Darsning to'liq tafsilotlarini olish" })
+  getLessonDetails(@Request() req, @Param('id') lessonId: string) {
+    return this.studentsService.getLessonDetails(req.user.id, +lessonId);
+  }
+
+  @Post('me/homeworks/:id/submit')
+  @UseInterceptors(FileInterceptor('file', getMulterOptions('homework_answers', 'document')))
+  @ApiConsumes('multipart/form-data')
+  @ApiOperation({ summary: "Uy vazifasini topshirish (faqat zip fayl orqali ixtiyoriy yuklash)" })
+  submitHomework(
+    @Request() req, 
+    @Param('id') homeworkId: string, 
+    @Body() payload: { title: string },
+    @UploadedFile() file?: Express.Multer.File
+  ) {
+    if (file && !file.originalname.toLowerCase().endsWith('.zip')) {
+      // Import BadRequestException inline to avoid changing imports at top if it's missing
+      const { BadRequestException } = require('@nestjs/common');
+      throw new BadRequestException("Faqatgina .zip fayllar qabul qilinadi!");
+    }
+    
+    const finalPayload = {
+      title: payload.title,
+      file: file ? `uploads/homework_answers/${file.filename}` : undefined
+    };
+
+    return this.studentsService.submitHomework(req.user.id, +homeworkId, finalPayload);
   }
 
   @Get()

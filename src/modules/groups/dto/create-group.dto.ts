@@ -8,6 +8,7 @@ import {
   Matches,
   IsArray,
   IsInt,
+  IsOptional,
 } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 import { Transform } from 'class-transformer';
@@ -17,6 +18,15 @@ export class CreateGroupDto {
   @IsString()
   @IsNotEmpty()
   name: string;
+
+  @ApiProperty({
+    example: "Batafsil ma'lumot",
+    description: 'Guruh haqida tavsif',
+    required: false,
+  })
+  @IsOptional()
+  @IsString()
+  description?: string;
 
   @ApiProperty({ example: 1, description: 'Kurs ID si' })
   @Transform(({ value }) => parseInt(value, 10))

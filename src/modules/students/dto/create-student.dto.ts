@@ -26,20 +26,21 @@ export class CreateStudentDto {
   @IsNotEmpty()
   phone: string;
 
-  @ApiProperty({ example: 'eshmat@student.uz' })
+  @ApiProperty({ required: false, example: 'eshmat@student.uz' })
+  @IsOptional()
   @IsEmail()
-  @IsNotEmpty()
-  email: string;
+  email?: string;
 
-  @ApiProperty({ example: 'password123' })
+  @ApiProperty({ required: false, example: 'password123' })
+  @IsOptional()
   @IsString()
   @MinLength(6)
-  password: string;
+  password?: string;
 
-  @ApiProperty({ example: 'Toshkent sh., Yunusobod' })
+  @ApiProperty({ required: false, example: 'Toshkent sh., Yunusobod' })
+  @IsOptional()
   @IsString()
-  @IsNotEmpty()
-  address: string;
+  address?: string;
 
   @ApiProperty({
     required: false,

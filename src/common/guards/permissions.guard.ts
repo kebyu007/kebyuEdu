@@ -38,17 +38,43 @@ export class PermissionsGuard implements CanActivate {
       return true;
     }
 
+    if (String(user.role).trim().toUpperCase() === 'TEACHER') {
+      const { module, action } = requiredPermission;
+      const allowedModules = [
+        'groups',
+        'homeworks',
+        'exams',
+        'journal',
+        'attendance',
+        'lessons',
+        'lesson_videos',
+        'lesson-videos',
+      ];
+
+      if (allowedModules.includes(module)) {
+        return true;
+      }
+    }
+
     // User'ning JSON attributelarini olamiz
     const attributes = user.attributes;
+    const { module, action } = requiredPermission;
 
     if (!attributes || !attributes.permissions) {
+      const fs = require('fs');
+      fs.appendFileSync(
+        '/tmp/nest-debug.log',
+        `[PermissionsGuard Debug] FAILURE: Role=${user.role}, module=${module}, action=${action}\n`,
+      );
+      console.log(
+        `[PermissionsGuard Debug] 403 - No attributes for user ${user.id}, role: ${user.role}, requested: ${module}.${action}`,
+      );
       throw new ForbiddenException(
         "Sizda ushbu moduldan foydalanish uchun huquqlar o'rnatilmagan",
       );
     }
 
     const userPermissions = attributes.permissions;
-    const { module, action } = requiredPermission;
 
     // So'ralayotgan modul ruxsatnomalar ichida bormi va tegishli action yoqilganmi? (yoki yulduzcha - hamma narsaga ruxsat berilganmi)
     const hasModuleAccess = userPermissions[module] || userPermissions['*'];

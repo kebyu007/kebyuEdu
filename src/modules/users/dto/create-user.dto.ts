@@ -32,16 +32,19 @@ export class CreateUserDto {
   phone: string;
 
   @ApiProperty({ example: 'ali@example.com' })
+  @IsOptional()
   @IsString()
-  email: string;
+  email?: string;
 
   @ApiProperty({ example: 'Tashkent' })
+  @IsOptional()
   @IsString()
-  address: string;
+  address?: string;
 
   @ApiProperty({ enum: Status, example: Status.active })
+  @IsOptional()
   @IsEnum(Status)
-  status: Status;
+  status?: Status;
 
   @ApiPropertyOptional({ example: '1995-10-15' })
   @IsOptional()

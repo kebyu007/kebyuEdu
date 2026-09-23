@@ -15,8 +15,13 @@ export class CreateLessonDto {
   @IsNotEmpty()
   topic: string;
 
-  @ApiProperty({ example: 'Present Simple haqida' })
+  @ApiProperty({ example: 'Present Simple haqida', required: false })
+  @IsOptional()
+  @IsString()
+  description?: string;
+
+  @ApiProperty({ example: '2026-09-21' })
   @IsString()
   @IsNotEmpty()
-  description: string;
+  date: string;
 }

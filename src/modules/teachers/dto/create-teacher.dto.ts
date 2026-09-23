@@ -27,19 +27,20 @@ export class CreateTeacherDto {
   phone: string;
 
   @ApiProperty({ example: 'alisher.navoiy@edu.uz' })
+  @IsOptional()
   @IsEmail()
-  @IsNotEmpty()
-  email: string;
+  email?: string;
 
-  @ApiProperty({ example: 'password123' })
+  @ApiProperty({ required: false, example: 'password123' })
+  @IsOptional()
   @IsString()
   @MinLength(6)
-  password: string;
+  password?: string;
 
   @ApiProperty({ example: 'Toshkent sh., Chilonzor' })
+  @IsOptional()
   @IsString()
-  @IsNotEmpty()
-  address: string;
+  address?: string;
 
   @ApiProperty({
     required: false,

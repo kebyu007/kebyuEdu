@@ -8,6 +8,7 @@ import {
   Delete,
   Query,
   UseGuards,
+  Req,
 } from '@nestjs/common';
 import { GroupsService } from './groups.service';
 import { CreateGroupDto } from './dto/create-group.dto';
@@ -36,7 +37,10 @@ export class GroupsController {
   @Get()
   @ApiOperation({ summary: "Barcha guruhlarni ro'yxatini olish" })
   @RequirePermissions('groups', 'read')
-  findAll(@Query() filterDto: FilterGroupDto) {
+  findAll(@Query() filterDto: FilterGroupDto, @Req() req: any) {
+    if (req.user && req.user.role === 'TEACHER') {
+      filterDto.teacher_id = req.user.id;
+    }
     return this.groupsService.findAll(filterDto);
   }
 
@@ -79,5 +83,60 @@ export class GroupsController {
     @Body() assignStudentDto: AssignStudentDto,
   ) {
     return this.groupsService.assignStudent(+id, assignStudentDto.student_id);
+  }
+
+  @Get(':id/homeworks')
+  @ApiOperation({ summary: 'Guruhga tegishli barcha uyga vazifalarni olish' })
+  @RequirePermissions('groups', 'read')
+  getGroupHomeworks(@Param('id') id: string) {
+    return this.groupsService.getGroupHomeworks(+id);
+  }
+
+  @Get(':id/lesson-videos')
+  @ApiOperation({ summary: 'Guruhga tegishli barcha video darsliklarni olish' })
+  @RequirePermissions('groups', 'read')
+  getGroupLessonVideos(@Param('id') id: string) {
+    return this.groupsService.getGroupLessonVideos(+id);
+  }
+
+  @Get(':id/exams')
+  @ApiOperation({ summary: 'Guruhga tegishli barcha imtihonlarni olish' })
+  @RequirePermissions('groups', 'read')
+  getGroupExams(@Param('id') id: string) {
+    return this.groupsService.getGroupExams(+id);
+  }
+
+  @Get(':id/statistics')
+  @ApiOperation({
+    summary: "Guruhning umumiy statistikasini olish (davomat, o'zlashtirish)",
+  })
+  @RequirePermissions('groups', 'read')
+  getGroupStatistics(@Param('id') id: string) {
+    return this.groupsService.getGroupStatistics(+id);
+  }
+
+  @Get(':id/journal')
+  @ApiOperation({ summary: "Guruh jurnali (baholar ro'yxati)" })
+  @RequirePermissions('groups', 'read')
+  getGroupJournal(@Param('id') id: string) {
+    return this.groupsService.getGroupJournal(+id);
+  }
+
+  @Get(':id/attendance')
+  @ApiOperation({ summary: 'Guruh akademik davomati' })
+  @RequirePermissions('groups', 'read')
+  getGroupAttendance(@Param('id') id: string) {
+    return this.groupsService.getGroupAttendance(+id);
+  }
+
+  @Post(':id/attendance')
+  @ApiOperation({ summary: "Guruh davomatini saqlash" })
+  @RequirePermissions('groups', 'update')
+  saveGroupAttendance(
+    @Param('id') id: string,
+    @Body() dto: import('./dto/save-attendance.dto').SaveAttendanceDto,
+    @Req() req: any,
+  ) {
+    return this.groupsService.saveGroupAttendance(+id, req.user.id, dto);
   }
 }

@@ -18,6 +18,10 @@ import { RoomsModule } from './modules/rooms/rooms.module';
 import { GroupsModule } from './modules/groups/groups.module';
 import { LessonsModule } from './modules/lessons/lessons.module';
 import { HomeworksModule } from './modules/homeworks/homeworks.module';
+import { LessonVideosModule } from './modules/lesson-videos/lesson-videos.module';
+import { PaymentsModule } from './modules/payments/payments.module';
+import { ReportsModule } from './modules/reports/reports.module';
+import { ExamsModule } from './modules/exams/exams.module';
 
 @Module({
   imports: [
@@ -52,6 +56,10 @@ import { HomeworksModule } from './modules/homeworks/homeworks.module';
     GroupsModule,
     LessonsModule,
     HomeworksModule,
+    LessonVideosModule,
+    PaymentsModule,
+    ReportsModule,
+    ExamsModule,
   ],
   providers: [
     {

@@ -3,6 +3,7 @@ import {
   NotFoundException,
   BadRequestException,
   ConflictException,
+  ForbiddenException,
 } from '@nestjs/common';
 import { CreateLessonDto } from './dto/create-lesson.dto';
 import { UpdateLessonDto } from './dto/update-lesson.dto';
@@ -19,14 +20,49 @@ export class LessonsService {
     });
     if (!group) throw new NotFoundException('Guruh topilmadi!');
 
+    // Check if lesson already exists for this date
+    const existing = await this.prisma.lesson.findFirst({
+      where: {
+        group_id: createLessonDto.group_id,
+        date: createLessonDto.date,
+      },
+    });
+
+    if (existing) {
+      throw new ConflictException(
+        'Ushbu kun uchun guruhda dars allaqachon yaratilgan!',
+      );
+    }
+
     return await this.prisma.lesson.create({
       data: {
         group_id: createLessonDto.group_id,
         teacher_id: createLessonDto.teacher_id,
         topic: createLessonDto.topic,
-        description: createLessonDto.description,
+        description: createLessonDto.description || '',
+        date: createLessonDto.date,
       },
     });
+  }
+
+  async findByDate(groupId: number, date: string) {
+    const lesson = await this.prisma.lesson.findFirst({
+      where: { group_id: groupId, date },
+      include: {
+        attendances: {
+          include: {
+            student: {
+              select: { id: true, first_name: true, last_name: true },
+            },
+          },
+        },
+      },
+    });
+
+    if (!lesson) {
+      return null;
+    }
+    return lesson;
   }
 
   async findAll(groupId: number) {
@@ -57,8 +93,20 @@ export class LessonsService {
     return lesson;
   }
 
-  async update(id: number, updateLessonDto: UpdateLessonDto) {
-    await this.findOne(id);
+  async update(id: number, updateLessonDto: UpdateLessonDto, user: any) {
+    const lesson = await this.findOne(id);
+
+    // Check if attendance already exists and user is teacher
+    if (
+      user?.role === 'TEACHER' &&
+      lesson.attendances &&
+      lesson.attendances.length > 0
+    ) {
+      throw new ForbiddenException(
+        "Dars elon qilingan va davomat kiritilgan. O'zgartirish mumkin emas!",
+      );
+    }
+
     return await this.prisma.lesson.update({
       where: { id },
       data: updateLessonDto,
@@ -76,9 +124,20 @@ export class LessonsService {
   async submitAttendance(
     lessonId: number,
     dto: SubmitAttendanceDto,
-    teacherId: number,
+    user: any,
   ) {
     const lesson = await this.findOne(lessonId);
+
+    // If attendance already exists and user is teacher, block
+    if (
+      user?.role === 'TEACHER' &&
+      lesson.attendances &&
+      lesson.attendances.length > 0
+    ) {
+      throw new ForbiddenException(
+        "Davomat allaqachon kiritilgan. O'zgartirish mumkin emas!",
+      );
+    }
 
     const studentIds = dto.attendances.map((a) => a.student_id);
     const validStudents = await this.prisma.studentGroup.findMany({
@@ -101,7 +160,7 @@ export class LessonsService {
           lesson_id: lessonId,
           student_id: a.student_id,
           isPresent: a.isPresent,
-          marked_by_id: teacherId,
+          marked_by_id: user.id,
         })),
       });
       return { success: true };

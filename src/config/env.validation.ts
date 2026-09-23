@@ -38,6 +38,30 @@ class EnvironmentVariables {
   @IsString()
   @IsNotEmpty()
   JWT_REFRESH_SECRET: string;
+
+  @IsString()
+  @IsOptional()
+  TELEGRAM_BOT_TOKEN?: string;
+
+  @IsString()
+  @IsOptional()
+  TELEGRAM_BOT_URL?: string;
+
+  @IsString()
+  @IsOptional()
+  MAIL_HOST?: string;
+
+  @IsNumber()
+  @IsOptional()
+  MAIL_PORT?: number;
+
+  @IsString()
+  @IsOptional()
+  MAIL_USER?: string;
+
+  @IsString()
+  @IsOptional()
+  MAIL_PASS?: string;
 }
 
 export function validate(config: Record<string, unknown>) {

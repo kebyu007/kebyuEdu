@@ -5,6 +5,7 @@ import {
 } from '@nestjs/common';
 import { PrismaService } from '@/core/database/prisma.service';
 import { CreateLessonVideoDto } from './dto/create-lesson-video.dto';
+import { UpdateLessonVideoDto } from './dto/update-lesson-video.dto';
 import { deleteFile } from '@/common/utils/file-cleanup.util';
 
 @Injectable()
@@ -32,6 +33,7 @@ export class LessonVideosService {
         data: {
           lesson_id: dto.lesson_id,
           group_id: dto.group_id,
+          title: dto.title || file.originalname,
           originalName: file.originalname,
           videoUrl: file.path,
           size_mb,
@@ -47,6 +49,18 @@ export class LessonVideosService {
     return this.prisma.lessonVideo.findMany({
       where: { lesson_id: lessonId },
       orderBy: { createdAt: 'desc' },
+    });
+  }
+
+  async update(id: number, dto: UpdateLessonVideoDto) {
+    const video = await this.prisma.lessonVideo.findUnique({ where: { id } });
+    if (!video) throw new NotFoundException('Video topilmadi!');
+
+    return this.prisma.lessonVideo.update({
+      where: { id },
+      data: {
+        title: dto.title !== undefined ? dto.title : video.title,
+      },
     });
   }
 

@@ -90,6 +90,7 @@ export class UsersService {
           address: true,
           birth_date: true,
           attributes: true,
+          balance: true,
           createdAt: true,
           studentGroups: { include: { group: true } },
           teacherGroups: { include: { group: true } },
@@ -134,6 +135,7 @@ export class UsersService {
         address: true,
         birth_date: true,
         attributes: true,
+        balance: true,
         createdAt: true,
         studentGroups: {
           select: { group: { select: { id: true, name: true } } },

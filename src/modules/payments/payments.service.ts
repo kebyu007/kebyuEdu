@@ -44,6 +44,16 @@ export class PaymentsService {
       message,
     );
 
+    // Balance ni oshirish (to'lov kiritildi)
+    await this.prisma.user.update({
+      where: { id: dto.student_id },
+      data: {
+        balance: {
+          increment: dto.amount
+        }
+      }
+    });
+
     return payment;
   }
 
@@ -67,5 +77,37 @@ export class PaymentsService {
         admin: { select: { first_name: true, last_name: true } },
       },
     });
+  }
+
+  async chargeStudent(adminId: number, studentId: number, amount: number, month: string, comment?: string) {
+    const student = await this.prisma.user.findUnique({
+      where: { id: studentId },
+    });
+
+    if (!student) {
+      throw new NotFoundException("O'quvchi topilmadi");
+    }
+
+    // Balance dan pulni yechish (ayirish)
+    await this.prisma.user.update({
+      where: { id: studentId },
+      data: {
+        balance: {
+          decrement: amount
+        }
+      }
+    });
+
+    // In-app Notification yuborish
+    const formattedAmount = Number(amount).toLocaleString('uz-UZ');
+    const message = `Sizdan joriy oy (${month}) uchun ${formattedAmount} so'm to'lov yechib olindi.${comment ? ' Izoh: ' + comment : ''}`;
+
+    await this.notifications.createNotification(
+      studentId,
+      "To'lov yechildi 📉",
+      message,
+    );
+
+    return { success: true, newBalance: Number(student.balance) - amount };
   }
 }

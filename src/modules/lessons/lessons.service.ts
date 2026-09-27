@@ -9,10 +9,14 @@ import { CreateLessonDto } from './dto/create-lesson.dto';
 import { UpdateLessonDto } from './dto/update-lesson.dto';
 import { SubmitAttendanceDto } from './dto/submit-attendance.dto';
 import { PrismaService } from '@/core/database/prisma.service';
+import { SiteNotificationsService } from '../notifications/site-notifications.service';
 
 @Injectable()
 export class LessonsService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private notifications: SiteNotificationsService
+  ) {}
 
   async create(createLessonDto: CreateLessonDto) {
     const group = await this.prisma.group.findUnique({
@@ -163,6 +167,18 @@ export class LessonsService {
           marked_by_id: user.id,
         })),
       });
+
+      // Notification yuborish
+      for (const a of dto.attendances) {
+        if (!a.isPresent) {
+          await this.notifications.createNotification(
+            a.student_id,
+            "Davomat: Yo'q",
+            `Siz bugungi (${new Date(lesson.date).toLocaleDateString('uz-UZ')}) darsda qatnashmadingiz.`
+          );
+        }
+      }
+
       return { success: true };
     } catch (error) {
       throw new ConflictException('Davomat kiritishda xatolik yuz berdi!');

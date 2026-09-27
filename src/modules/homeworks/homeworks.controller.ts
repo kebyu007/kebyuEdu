@@ -9,6 +9,8 @@ import {
   UploadedFile,
   Req,
   Get,
+  Put,
+  Delete,
 } from '@nestjs/common';
 import { HomeworksService } from './homeworks.service';
 import { CreateHomeworkDto } from './dto/create-homework.dto';
@@ -84,5 +86,22 @@ export class HomeworksController {
   @RequirePermissions('homeworks', 'read')
   getHomeworkResults(@Param('id') id: string) {
     return this.homeworksService.getHomeworkResults(+id);
+  }
+
+  @Put(':id')
+  @ApiOperation({ summary: 'Uy vazifasi sarlavhasini tahrirlash' })
+  @RequirePermissions('homeworks', 'update')
+  updateHomework(
+    @Param('id') id: string,
+    @Body() updateDto: any,
+  ) {
+    return this.homeworksService.updateHomework(+id, updateDto);
+  }
+
+  @Delete(':id')
+  @ApiOperation({ summary: "Uy vazifasini o'chirish" })
+  @RequirePermissions('homeworks', 'delete')
+  deleteHomework(@Param('id') id: string) {
+    return this.homeworksService.deleteHomework(+id);
   }
 }

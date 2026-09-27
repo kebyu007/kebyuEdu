@@ -4,9 +4,14 @@ import { CreateExamDto } from './dto/create-exam.dto';
 import * as fs from 'fs';
 import * as path from 'path';
 
+import { SiteNotificationsService } from '../notifications/site-notifications.service';
+
 @Injectable()
 export class ExamsService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private notifications: SiteNotificationsService
+  ) {}
 
   async create(createExamDto: CreateExamDto, file?: Express.Multer.File) {
     const group = await this.prisma.group.findUnique({
@@ -23,7 +28,7 @@ export class ExamsService {
       fileUrl = `/uploads/exams/${file.filename}`;
     }
 
-    return await this.prisma.exam.create({
+    const exam = await this.prisma.exam.create({
       data: {
         group_id: parseInt(createExamDto.group_id),
         topic: createExamDto.topic,
@@ -35,6 +40,20 @@ export class ExamsService {
         date: deadlineDate,
       },
     });
+
+    const studentGroups = await this.prisma.studentGroup.findMany({
+      where: { group_id: parseInt(createExamDto.group_id), status: 'active' }
+    });
+
+    for (const sg of studentGroups) {
+      await this.notifications.createNotification(
+        sg.student_id,
+        "Yangi imtihon e'lon qilindi!",
+        `Guruhda yangi imtihon: "${createExamDto.topic}"`
+      );
+    }
+
+    return exam;
   }
 
   async getExam(id: number) {
@@ -160,7 +179,7 @@ export class ExamsService {
 
     const passed = dto.score >= result.exam.minScore;
 
-    return await this.prisma.examResult.update({
+    const updated = await this.prisma.examResult.update({
       where: { id: resultId },
       data: {
         score: dto.score,
@@ -168,6 +187,14 @@ export class ExamsService {
         status: 'CHECKED',
       },
     });
+
+    await this.notifications.createNotification(
+      result.student_id,
+      "Imtihon tekshirildi",
+      `Sizning "${result.exam.topic}" imtihoningiz tekshirildi. Ballingiz: ${dto.score}/${result.exam.maxScore}`
+    );
+
+    return updated;
   }
 
   async deleteExam(id: number) {

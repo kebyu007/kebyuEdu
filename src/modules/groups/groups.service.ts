@@ -8,10 +8,14 @@ import { CreateGroupDto } from './dto/create-group.dto';
 import { UpdateGroupDto } from './dto/update-group.dto';
 import { FilterGroupDto } from './dto/filter-group.dto';
 import { PrismaService } from '@/core/database/prisma.service';
+import { SiteNotificationsService } from '../notifications/site-notifications.service';
 
 @Injectable()
 export class GroupsService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private notifications: SiteNotificationsService
+  ) {}
 
   async create(createGroupDto: CreateGroupDto) {
     const room = await this.prisma.room.findUnique({
@@ -302,10 +306,18 @@ export class GroupsService {
           );
         }
 
-        return await this.prisma.studentGroup.update({
+        const updated = await this.prisma.studentGroup.update({
           where: { id: existing.id },
           data: { status: 'active' },
         });
+        
+        await this.notifications.createNotification(
+          studentId,
+          "Yangi guruhga qo'shildingiz",
+          `Siz "${group.name}" guruhiga qo'shildingiz.`
+        );
+        
+        return updated;
       }
     }
 
@@ -321,12 +333,20 @@ export class GroupsService {
     }
 
     try {
-      return await this.prisma.studentGroup.create({
+      const created = await this.prisma.studentGroup.create({
         data: {
           group_id: groupId,
           student_id: studentId,
         },
       });
+      
+      await this.notifications.createNotification(
+        studentId,
+        "Yangi guruhga qo'shildingiz",
+        `Siz "${group.name}" guruhiga qo'shildingiz.`
+      );
+      
+      return created;
     } catch (error: any) {
       if (error.code === 'P2002') {
         throw new ConflictException("Ushbu o'quvchi guruhga avval qo'shilgan!");
@@ -391,7 +411,8 @@ export class GroupsService {
 
     return videos.map((video) => ({
       id: video.id,
-      name: video.originalName,
+      name: video.title || video.originalName,
+      originalName: video.originalName,
       lesson: video.lesson.topic,
       status: 'Tayyor',
       date: video.createdAt,

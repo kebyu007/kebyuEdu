@@ -12,10 +12,14 @@ import { deleteFile } from '@/common/utils/file-cleanup.util';
 import * as argon2 from 'argon2';
 import * as fs from 'fs';
 import { UserRoles, Prisma } from '@prisma/client';
+import { SiteNotificationsService } from '../notifications/site-notifications.service';
 
 @Injectable()
 export class StudentsService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private notifications: SiteNotificationsService
+  ) {}
 
   async create(createStudentDto: CreateStudentDto, file?: Express.Multer.File) {
     const orConditions: any[] = [{ phone: createStudentDto.phone }];
@@ -429,7 +433,15 @@ export class StudentsService {
   async submitHomework(studentId: number, homeworkId: number, payload: { title: string; file?: string }) {
     const homework = await this.prisma.homework.findUnique({
       where: { id: homeworkId },
-      include: { lesson: { select: { group_id: true } } }
+      include: { 
+        lesson: { 
+          include: { 
+            group: {
+              include: { groupTeachers: true }
+            }
+          }
+        } 
+      }
     });
 
     if (!homework) {
@@ -456,8 +468,9 @@ export class StudentsService {
       where: { student_id: studentId, homework_id: homeworkId }
     });
 
+    let submission;
     if (existingSubmission) {
-      return this.prisma.homeworkAnswerStudent.update({
+      submission = await this.prisma.homeworkAnswerStudent.update({
         where: { id: existingSubmission.id },
         data: {
           title: payload.title,
@@ -466,17 +479,31 @@ export class StudentsService {
           updatedAt: new Date()
         }
       });
+    } else {
+      submission = await this.prisma.homeworkAnswerStudent.create({
+        data: {
+          student_id: studentId,
+          homework_id: homeworkId,
+          title: payload.title,
+          file: payload.file,
+          status: 'PENDING'
+        }
+      });
     }
 
-    return this.prisma.homeworkAnswerStudent.create({
-      data: {
-        student_id: studentId,
-        homework_id: homeworkId,
-        title: payload.title,
-        file: payload.file,
-        status: 'PENDING'
+    // Notify teachers
+    const studentInfo = await this.prisma.user.findUnique({ where: { id: studentId } });
+    if (studentInfo && homework.lesson.group.groupTeachers) {
+      for (const gt of homework.lesson.group.groupTeachers) {
+        await this.notifications.createNotification(
+          gt.teacher_id,
+          "Yangi vazifa topshirildi!",
+          `${studentInfo.first_name} ${studentInfo.last_name} "${homework.title}" vazifasini topshirdi.`
+        );
       }
-    });
+    }
+
+    return submission;
   }
 
   async remove(id: number) {

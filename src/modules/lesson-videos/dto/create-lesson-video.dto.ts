@@ -13,6 +13,10 @@ export class CreateLessonVideoDto {
   @IsNumber()
   group_id: number;
 
+  @ApiPropertyOptional({ example: '1-dars videosi' })
+  @IsOptional()
+  title?: string;
+
   @ApiPropertyOptional({ type: 'string', format: 'binary' })
   @IsOptional()
   file?: any;

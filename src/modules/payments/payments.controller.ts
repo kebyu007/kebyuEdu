@@ -35,4 +35,21 @@ export class PaymentsController {
     // Har qanday tizimga kirgan user o'z to'lovini ko'ra oladi (Permission shart emas, JwtAuthGuard o'zi yetarli)
     return this.paymentsService.findMyPayments(req.user.id);
   }
+
+  @Post('charge')
+  @UseGuards(PermissionsGuard)
+  @RequirePermissions('payments', 'create')
+  @ApiOperation({ summary: "O'quvchidan oylik to'lovni yechish (Qarz yozish)" })
+  chargeStudent(
+    @Req() req: any,
+    @Body() body: { student_id: number; amount: number; month: string; comment?: string },
+  ) {
+    return this.paymentsService.chargeStudent(
+      req.user.id,
+      body.student_id,
+      body.amount,
+      body.month,
+      body.comment,
+    );
+  }
 }

@@ -5,12 +5,14 @@ import {
   Param,
   Delete,
   Get,
+  Put,
   UseGuards,
   UseInterceptors,
   UploadedFile,
 } from '@nestjs/common';
 import { LessonVideosService } from './lesson-videos.service';
 import { CreateLessonVideoDto } from './dto/create-lesson-video.dto';
+import { UpdateLessonVideoDto } from './dto/update-lesson-video.dto';
 import {
   ApiTags,
   ApiOperation,
@@ -48,6 +50,13 @@ export class LessonVideosController {
   @RequirePermissions('lesson_videos', 'read')
   findAllByLesson(@Param('lessonId') lessonId: string) {
     return this.lessonVideosService.findAllByLesson(+lessonId);
+  }
+
+  @Put(':id')
+  @ApiOperation({ summary: "Dars videosining nomini o'zgartirish" })
+  @RequirePermissions('lesson_videos', 'update')
+  update(@Param('id') id: string, @Body() dto: UpdateLessonVideoDto) {
+    return this.lessonVideosService.update(+id, dto);
   }
 
   @Delete(':id')
